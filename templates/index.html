@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Study Monitor</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: linear-gradient(135deg, #0f172a, #1e293b);
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+      .container {
+        width: min(900px, 90vw);
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+      }
+      h1 {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      .controls {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        margin: 20px 0;
+      }
+      button {
+        border: none;
+        border-radius: 10px;
+        padding: 12px 20px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.2s ease;
+      }
+      .start-btn {
+        background: #22c55e;
+        color: white;
+      }
+      .stop-btn {
+        background: #ef4444;
+        color: white;
+      }
+      button:hover {
+        transform: translateY(-1px);
+        opacity: 0.95;
+      }
+      .status-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin: 18px auto 12px;
+      }
+      .status-box {
+        text-align: center;
+        min-width: 240px;
+        padding: 12px 16px;
+        border-radius: 12px;
+        background: rgba(148, 163, 184, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: #f8fafc;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        box-shadow: inset 0 0 14px rgba(255, 255, 255, 0.04);
+      }
+      .timer-box {
+        min-width: 120px;
+        text-align: center;
+        padding: 12px 16px;
+        border-radius: 12px;
+        background: rgba(34, 197, 94, 0.15);
+        border: 1px solid rgba(34, 197, 94, 0.75);
+        color: #dcfce7;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+      }
+      .video-wrap {
+        display: flex;
+        justify-content: center;
+        background: #020817;
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      img {
+        max-width: 100%;
+        display: block;
+        border-radius: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Smart Study Monitor</h1>
+
+      <div class="controls">
+        <button class="start-btn" type="button" onclick="startMonitoring()">
+          Start
+        </button>
+        <button class="stop-btn" type="button" onclick="stopMonitoring()">
+          Stop
+        </button>
+      </div>
+
+      <div class="status-row">
+        <div id="statusBox" class="status-box">Monitoring stopped</div>
+        <div id="timerBox" class="timer-box">00:00</div>
+      </div>
+
+      <div class="video-wrap">
+        <img
+          id="videoFrame"
+          src="{{ url_for('video_feed') }}"
+          alt="Live camera feed"
+        />
+      </div>
+    </div>
+
+    <script>
+      function updateStatus() {
+        fetch("/status")
+          .then((response) => response.json())
+          .then((data) => {
+            const statusBox = document.getElementById("statusBox");
+            const timerBox = document.getElementById("timerBox");
+
+            statusBox.textContent = data.warning || "Monitoring stopped";
+            timerBox.textContent = data.study_time || "00:00";
+
+            statusBox.style.background =
+              data.status === "started"
+                ? "rgba(34, 197, 94, 0.18)"
+                : "rgba(148, 163, 184, 0.12)";
+            statusBox.style.borderColor =
+              data.status === "started"
+                ? "rgba(34, 197, 94, 0.8)"
+                : "rgba(255, 255, 255, 0.12)";
+          });
+      }
+
+      function startMonitoring() {
+        fetch("/toggle_monitor/start").then(() => {
+          const img = document.getElementById("videoFrame");
+          img.src = "/video_feed?ts=" + new Date().getTime();
+          updateStatus();
+        });
+      }
+
+      function stopMonitoring() {
+        fetch("/toggle_monitor/stop").then(() => {
+          const img = document.getElementById("videoFrame");
+          img.src = "/video_feed?ts=" + new Date().getTime();
+          updateStatus();
+        });
+      }
+
+      setInterval(updateStatus, 1000);
+    </script>
+  </body>
+</html>
